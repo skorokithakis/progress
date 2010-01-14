@@ -12,9 +12,9 @@ class Progress:
     def __init__(self, totalitems, timeasstring = True):
         """Create a Progress instance. totalitems must be the total number of
         items we intend to process, so the class knows how far we've gone."""
-        self.__totalitems = totalitems
-        self.__starttime = time.time()
-        self.__timeasstring = timeasstring
+        self._totalitems = totalitems
+        self._starttime = time.time()
+        self._timeasstring = timeasstring
 
     def timetostr(self, duration):
         """Convert seconds to D:H:M:S format (whichever applicable)."""
@@ -22,34 +22,34 @@ class Progress:
         # since it will probably be used in loops (hopefully not called very
         # often, but still).
         duration = int(duration)
-        timelist = [duration / 86400, (duration / 3600) % 24]
-        timestring = ""
-        printall = False
-        for item in timelist:
-            printall |= item
-            if printall:
-                timestring += str(item).zfill(2) + ":"
-        timestring += str((duration / 60) % 60).zfill(2) + \
-        ":" + str(duration % 60).zfill(2)
-        return timestring
+        days = duration / 86400
+        hours = (duration / 3600) % 24
+        minutes = (duration / 60) % 60
+        seconds = duration % 60
+        timestring = "%(minutes)0.2d:%(seconds)0.2d"
+        if days > 0:
+            timestring = "%(days)0.2d:%(hours)0.2d:" + timestring
+        elif hours > 0:
+            timestring = "%(hours)0.2d:" + timestring
+        return timestring % {"days": days, "hours": hours, "minutes": minutes, "seconds": seconds}
 
     def progress(self, itemnumber):
         """We have progressed itemnumber items, so return our completion
         percentage, items/total items, total time and projected total
         time."""
-        elapsed = time.time() - self.__starttime
+        elapsed = time.time() - self._starttime
         # Multiply by 1.0 to force conversion to long.
-        percentcomplete = (1.0 * itemnumber) / self.__totalitems
+        percentcomplete = (1.0 * itemnumber) / self._totalitems
         try:
             total = int(elapsed / percentcomplete)
         except ZeroDivisionError:
             total = 0
-        if self.__timeasstring:
+        if self._timeasstring:
             return (
                 self.timetostr(elapsed),
                 self.timetostr(total),
                 int(percentcomplete * 100),
-                itemnumber, self.__totalitems
+                itemnumber, self._totalitems
                 )
         else:
             return (
@@ -57,13 +57,13 @@ class Progress:
                 int(total),
                 int(percentcomplete * 100),
                 itemnumber,
-                self.__totalitems
+                self._totalitems
                 )
 
     def progressstring(self, itemnumber):
         """Return a string detailing the current progress."""
         timings = self.progress(itemnumber)
-        if itemnumber == self.__totalitems:
+        if itemnumber == self._totalitems:
             return "Done in %s, processed %s items.        \n" % \
             (timings[0], timings[4])
         else:
